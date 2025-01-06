@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>配置管理</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body { 
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 70px;
+        }
+
+        .section { 
+            margin-bottom: 25px;
+            padding: 25px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .source-item { 
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .source-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn { 
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .remove-btn { 
+            background-color: #dc3545;
+        }
+
+        input[type="text"] { 
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76,175,80,0.2);
+        }
+
+        textarea { 
+            width: 100%;
+            height: 100px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76,175,80,0.2);
+        }
+
+        .field-label { 
+            font-weight: 600;
+            margin-top: 15px;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .field-description { 
+            color: #6c757d;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .checkbox-container {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .save-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .save-btn {
+            background-color: #2196F3;
+            padding: 10px 30px;
+            font-size: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .api-link {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .api-link a {
+            word-break: break-all;
+            color: #2196F3;
+            text-decoration: none;
+        }
+
+        .api-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="api-link">
+        <p style="color: #666; margin-bottom: 10px;">JSON API 地址：</p>
+        <a href="?api=json" target="_blank"></a>
+        <button onclick="copyApiUrl()" class="btn" style="background-color: #607D8B; margin-left: 10px;">复制链接</button>
+    </div>
+<div class="section">
+    <h2>JSON解析</h2>
+    <div class="json-parser">
+        <div class="field-label">输入JSON配置：</div>
+        <textarea id="jsonInput" placeholder="在此粘贴或输入JSON配置" style="height: 150px;"></textarea>
+        <div style="margin-top: 10px;">
+            <button onclick="parseJsonInput()" class="btn" style="background-color: #2196F3;">解析JSON</button>
+            <button onclick="formatJsonInput()" class="btn" style="background-color: #607D8B; margin-left: 10px;">格式化JSON</button>
+            <button onclick="clearJsonInput()" class="btn" style="background-color: #dc3545; margin-left: 10px;">清空</button>
+        </div>
+        <div id="parseError" style="color: #dc3545; margin-top: 10px; font-size: 14px;"></div>
+    </div>
+</div>
+
+<style>
+    .json-parser {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+</style>
+    <div class="section">
+        <h2>基础设置</h2>
+        <div class="field-label">隐私码：</div>
+        <input type="text" id="privateKey" placeholder="请输入隐私码">
+    </div>
+
+    <div class="section">
+        <h2>电视直播配置</h2>
+        <div id="tvSourcesList"></div>
+        <button onclick="addTvSource()" class="btn">+ 添加电视源</button>
+    </div>
+
+    <div class="section">
+        <h2>影视点播配置</h2>
+        <div id="sourcesList"></div>
+        <button onclick="addSource()" class="btn">+ 添加影视源</button>
+    </div>
+
+    <div class="save-section">
+        <button onclick="exportConfig()" class="btn" style="margin-right: 10px; background-color: #607D8B;">导出配置</button>
+        <button onclick="saveConfig()" class="btn save-btn">保存配置</button>
+    </div>
+
+    <script>
+        let config = {
+            privateKey: "",
+            tvSources: [],
+            sources: []
+        };
+
+        function initializeConfig(data) {
+            config = data;
+            document.getElementById('privateKey').value = config.privateKey;
+            renderTvSources();
+            renderSources();
+        }
+
+        function renderTvSources() {
+            const container = document.getElementById('tvSourcesList');
+            container.innerHTML = '';
+            config.tvSources.forEach((source, index) => {
+                container.innerHTML += `
+                    <div class="source-item">
+                        <div class="field-label">名称：</div>
+                        <input type="text" value="${source.name}" onchange="updateTvSource(${index}, 'name', this.value)" placeholder="请输入名称">
+                        
+                        <div class="field-label">m3u地址：</div>
+                        <input type="text" value="${source.m3uUrl}" onchange="updateTvSource(${index}, 'm3uUrl', this.value)" placeholder="请输入m3u地址">
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" ${source.block ? 'checked' : ''} onchange="updateTvSource(${index}, 'block', this.checked)">
+                            <label>需要隐私码</label>
+                        </div>
+                        <button onclick="removeTvSource(${index})" class="btn remove-btn">删除</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderSources() {
+            const container = document.getElementById('sourcesList');
+            container.innerHTML = '';
+            config.sources.forEach((source, index) => {
+                container.innerHTML += `
+                    <div class="source-item">
+                        <div class="field-label">名称：</div>
+                        <input type="text" value="${source.name}" onchange="updateSource(${index}, 'name', this.value)" placeholder="请输入名称">
+                        
+                        <div class="field-label">URL：</div>
+                        <input type="text" value="${source.url}" onchange="updateSource(${index}, 'url', this.value)" placeholder="请输入URL">
+                        
+                        <div class="field-label">播放器名称：</div>
+                        <div class="field-description">JSON格式，例如：{"ffm3u8": "非凡"}</div>
+                        <textarea onchange="updateSource(${index}, 'playerName', this.value)" placeholder='{"ffm3u8": "非凡"}'>${JSON.stringify(source.playerName || {}, null, 2)}</textarea>
+                        
+                        <div class="field-label">屏蔽分类名称：</div>
+                        <div class="field-description">数组格式，例如：["伦理", "港台三级"]</div>
+                        <textarea onchange="updateSource(${index}, 'blockTypeName', this.value)" placeholder='["伦理", "港台三级"]'>${JSON.stringify(source.blockTypeName || [], null, 2)}</textarea>
+                        
+                        <div class="field-label">广告规则：</div>
+                        <div class="field-description">数组格式，填写正则表达式</div>
+                        <textarea onchange="updateSource(${index}, 'blockAdsRule', this.value)" placeholder="[]">${JSON.stringify(source.blockAdsRule || [], null, 2)}</textarea>
+                        
+                        <div class="field-label">分类配置：</div>
+                        <div class="field-description">JSON格式，用于一级分类转二级分类</div>
+                        <textarea onchange="updateSource(${index}, 'typeConfig', this.value)" placeholder="{}">${JSON.stringify(source.typeConfig || {}, null, 2)}</textarea>
+                        
+                        <div class="field-label">描述：</div>
+                        <input type="text" value="${source.desc || ''}" onchange="updateSource(${index}, 'desc', this.value)" placeholder="请输入描述">
+                        
+                        <div style="margin-top: 15px;">
+                            <button onclick="removeSource(${index})" class="btn remove-btn">删除</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addTvSource() {
+            config.tvSources.push({
+                name: "",
+                m3uUrl: "",
+                block: false
+            });
+            renderTvSources();
+        }
+
+        function addSource() {
+            config.sources.push({
+                name: "",
+                url: "",
+                playerName: {},
+                blockTypeName: [],
+                blockAdsRule: [],
+                typeConfig: {},
+                desc: ""
+            });
+            renderSources();
+        }
+
+        function updateTvSource(index, field, value) {
+            config.tvSources[index][field] = value;
+        }
+
+        function updateSource(index, field, value) {
+            try {
+                if (field === 'playerName' || field === 'typeConfig') {
+                    config.sources[index][field] = JSON.parse(value);
+                } else if (field === 'blockTypeName' || field === 'blockAdsRule') {
+                    config.sources[index][field] = JSON.parse(value);
+                } else {
+                    config.sources[index][field] = value;
+                }
+            } catch (e) {
+                alert('格式错误：' + e.message);
+            }
+        }
+
+        function removeTvSource(index) {
+            config.tvSources.splice(index, 1);
+            renderTvSources();
+        }
+
+        function removeSource(index) {
+            config.sources.splice(index, 1);
+            renderSources();
+        }
+
+        function saveConfig() {
+            config.privateKey = document.getElementById('privateKey').value;
+            
+            try {
+                localStorage.setItem('videoConfig', JSON.stringify(config));
+                console.log('配置已保存到本地存储：', config);
+                
+                const saveBtn = document.querySelector('.save-btn');
+                const originalText = saveBtn.textContent;
+                saveBtn.textContent = '保存成功！';
+                saveBtn.style.backgroundColor = '#4CAF50';
+                
+                setTimeout(() => {
+                    saveBtn.textContent = originalText;
+                    saveBtn.style.backgroundColor = '#2196F3';
+                }, 2000);
+            } catch (e) {
+                alert('保存失败：' + e.message);
+            }
+        }
+
+        function loadConfig() {
+            try {
+                const savedConfig = localStorage.getItem('videoConfig');
+                if (savedConfig) {
+                    return JSON.parse(savedConfig);
+                }
+            } catch (e) {
+                console.error('加载配置失败：', e);
+            }
+            
+            return {
+                "privateKey": "404",
+                "tvSources": [
+                    {
+                        "name": "IPTV 1 [IPV6]",
+                        "m3uUrl": "https://ghp.ci/https://raw.githubusercontent.com/cuikaipeng/IPTV/refs/heads/main/IPTV.m3u",
+                        "block": false
+                    }
+                ],
+                "sources": [
+                    {
+                        "name": "非凡资源",
+                        "url": "http://cj.ffzyapi.com/api.php/provide/vod/from/ffm3u8/",
+                        "playerName": {
+                            "ffm3u8": "非凡"
+                        },
+                        "blockTypeName": ["伦理", "港台三级"],
+                        "blockAdsRule": [],
+                        "desc": "示例描述"
+                    }
+                ]
+            };
+        }
+
+        function exportConfig() {
+            const dataStr = JSON.stringify(config, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'video-config.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function copyApiUrl() {
+            const url = window.location.href.split('?')[0] + '?api=json';
+            navigator.clipboard.writeText(url).then(() => {
+                alert('API 地址已复制到剪贴板！');
+            }).catch(err => {
+                alert('复制失败，请手动复制：' + url);
+            });
+        }
+
+        // 检查是否是API请求
+        function checkIfApiRequest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isApi = urlParams.get('api');
+            
+            if (isApi === 'json') {
+                document.body.innerHTML = '<pre style="padding: 20px;"></pre>';
+                const savedConfig = localStorage.getItem('videoConfig');
+                const configToShow = savedConfig ? JSON.parse(savedConfig): loadConfig();
+document.querySelector('pre').textContent = JSON.stringify(configToShow, null, 2);
+                
+                document.querySelector('head').innerHTML = `
+                    <meta charset="UTF-8">
+                    <title>Config JSON</title>
+                    <meta http-equiv="Content-Type" content="application/json; charset=utf-8">
+                `;
+            }
+        }
+
+        // 设置API链接
+        window.addEventListener('load', () => {
+            checkIfApiRequest();
+            if (!window.location.search.includes('api=json')) {
+                const apiUrl = window.location.href.split('?')[0] + '?api=json';
+                document.querySelector('.api-link a').href = apiUrl;
+                document.querySelector('.api-link a').textContent = apiUrl;
+            }
+        });
+
+        // 初始化配置（仅在非API访问时执行）
+        if (!window.location.search.includes('api=json')) {
+            initializeConfig(loadConfig());
+        }
+function parseJsonInput() {
+    const jsonInput = document.getElementById('jsonInput').value.trim();
+    const errorElement = document.getElementById('parseError');
+    
+    if (!jsonInput) {
+        errorElement.textContent = '请输入JSON配置';
+        return;
+    }
+    
+    try {
+        const parsedConfig = JSON.parse(jsonInput);
+        
+        // 验证配置结构
+        if (!isValidConfig(parsedConfig)) {
+            errorElement.textContent = '无效的配置格式，请确保包含必要的字段';
+            return;
+        }
+        
+        // 更新配置
+        config = parsedConfig;
+        localStorage.setItem('videoConfig', JSON.stringify(config));
+        initializeConfig(config);
+        
+        // 显示成功消息
+        errorElement.style.color = '#4CAF50';
+        errorElement.textContent = '解析成功并已应用配置！';
+        
+        // 3秒后清除消息
+        setTimeout(() => {
+            errorElement.textContent = '';
+        }, 3000);
+        
+    } catch (e) {
+        errorElement.style.color = '#dc3545';
+        errorElement.textContent = '解析失败：' + e.message;
+    }
+}
+
+// 验证配置结构
+function isValidConfig(config) {
+    return (
+        typeof config === 'object' &&
+        'privateKey' in config &&
+        Array.isArray(config.tvSources) &&
+        Array.isArray(config.sources)
+    );
+}
+
+// 格式化JSON
+function formatJsonInput() {
+    const jsonInput = document.getElementById('jsonInput').value.trim();
+    const errorElement = document.getElementById('parseError');
+    
+    if (!jsonInput) {
+        errorElement.textContent = '请输入JSON配置';
+        return;
+    }
+    
+    try {
+        const parsed = JSON.parse(jsonInput);
+        document.getElementById('jsonInput').value = JSON.stringify(parsed, null, 2);
+        errorElement.style.color = '#4CAF50';
+        errorElement.textContent = 'JSON格式化成功！';
+        
+        setTimeout(() => {
+            errorElement.textContent = '';
+        }, 3000);
+    } catch (e) {
+        errorElement.style.color = '#dc3545';
+        errorElement.textContent = '格式化失败：' + e.message;
+    }
+}
+
+// 清空输入
+function clearJsonInput() {
+    document.getElementById('jsonInput').value = '';
+    document.getElementById('parseError').textContent = '';
+}
+
+// 添加拖拽文件支持
+function initializeDragAndDrop() {
+    const jsonInput = document.getElementById('jsonInput');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        jsonInput.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    jsonInput.addEventListener('dragenter', () => {
+        jsonInput.style.borderColor = '#2196F3';
+    });
+    
+    jsonInput.addEventListener('dragleave', () => {
+        jsonInput.style.borderColor = '#ddd';
+    });
+    
+    jsonInput.addEventListener('drop', (e) => {
+        jsonInput.style.borderColor = '#ddd';
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                jsonInput.value = e.target.result;
+                formatJsonInput();
+            };
+            reader.readAsText(file);
+        }
+    });
+}
+
+// 在页面加载完成后初始化拖拽功能
+window.addEventListener('load', () => {
+    // 保留原有的加载事件处理
+    checkIfApiRequest();
+    if (!window.location.search.includes('api=json')) {
+        const apiUrl = window.location.href.split('?')[0] + '?api=json';
+        document.querySelector('.api-link a').href = apiUrl;
+        document.querySelector('.api-link a').textContent = apiUrl;
+        initializeConfig(loadConfig());
+    }
+    
+    // 初始化拖拽功能
+    initializeDragAndDrop();
+});
+
+// 添加快捷键支持
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + Shift + V: 格式化JSON
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V') {
+        e.preventDefault();
+        formatJsonInput();
+    }
+    // Ctrl/Cmd + Enter: 解析JSON
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        parseJsonInput();
+    }
+});
+    </script>
+</body>
+</html>
